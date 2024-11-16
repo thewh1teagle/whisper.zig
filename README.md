@@ -4,4 +4,4 @@ Transcribe audio with whisper in Zig
 
 ## Building
 
-See [Building.md](building.md)
+See [Building.md](BUILDING.md)
