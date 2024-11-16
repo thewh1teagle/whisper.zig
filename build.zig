@@ -71,8 +71,8 @@ pub fn build(b: *std.Build) !void {
     exe.addLibraryPath(b.path("lib/libsndfile/build/Release"));
     exe.linkSystemLibrary("sndfile");
 
-    // exe.linkLibC();
     exe.linkLibCpp();
+    exe.linkLibC();
 
     exe.step.dependOn(&libsnd_build.step);
     exe.step.dependOn(&whisper_build.step);
