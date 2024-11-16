@@ -12,3 +12,9 @@ cd whisper.zig
 zig build
 ./zig-out/bin/whisper.zig
 ```
+
+Clean
+
+```console
+rm -rf lib/whisper.cpp/build lib/libsndfile.cpp/build .zig-cache zig-out
+```

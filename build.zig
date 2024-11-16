@@ -5,9 +5,9 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // Config whisper
-    const whisper_build_dir = b.path("whisper.cpp/build");
+    const whisper_build_dir = b.path("lib/whisper.cpp/build");
     const whisper_mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p", whisper_build_dir.getPath(b) });
-    const whisper_configure = b.addSystemCommand(&.{ "cmake", "-B", whisper_build_dir.getPath(b), "-S", "whisper.cpp", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DGGML_METAL_EMBED_LIBRARY=ON", "-DGGML_METAL=ON", "-DGGML_OPENMP=OFF" });
+    const whisper_configure = b.addSystemCommand(&.{ "cmake", "-B", whisper_build_dir.getPath(b), "-S", "lib/whisper.cpp", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DGGML_METAL_EMBED_LIBRARY=OFF", "-DGGML_METAL=OFF", "-DGGML_OPENMP=OFF", "-DWHISPER_BUILD_EXAMPLES=OFF", "-DWHISPER_BUILD_TESTS=OFF" });
     whisper_configure.step.dependOn(&whisper_mkdir_cmd.step);
 
     // Build whisper
@@ -21,9 +21,9 @@ pub fn build(b: *std.Build) void {
     whisper_build.step.dependOn(&whisper_configure.step);
 
     // Config libsndfile
-    const libsnd_build_dir = b.path("libsndfile/build");
+    const libsnd_build_dir = b.path("lib/libsndfile/build");
     const libsnd_mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p", libsnd_build_dir.getPath(b) });
-    const libsnd_configure = b.addSystemCommand(&.{ "cmake", "-B", libsnd_build_dir.getPath(b), "-S", "libsndfile", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DENABLE_EXTERNAL_LIBS=OFF", "-DENABLE_MPEG=OFF" });
+    const libsnd_configure = b.addSystemCommand(&.{ "cmake", "-B", libsnd_build_dir.getPath(b), "-S", "lib/libsndfile", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DENABLE_EXTERNAL_LIBS=OFF", "-DENABLE_MPEG=OFF" });
     libsnd_configure.step.dependOn(&libsnd_mkdir_cmd.step);
 
     // Build whisper
@@ -43,13 +43,13 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     // Add whisper include path
-    exe.addIncludePath(b.path("whisper.cpp/src"));
-    exe.addIncludePath(b.path("whisper.cpp/src/include"));
-    exe.addIncludePath(b.path("whisper.cpp/include"));
-    exe.addIncludePath(b.path("whisper.cpp/ggml/include"));
+    exe.addIncludePath(b.path("lib/whisper.cpp/src"));
+    exe.addIncludePath(b.path("lib/whisper.cpp/src/include"));
+    exe.addIncludePath(b.path("lib/whisper.cpp/include"));
+    exe.addIncludePath(b.path("lib/whisper.cpp/ggml/include"));
 
     // Add libsndfile include path
-    exe.addIncludePath(b.path("libsndfile/include"));
+    exe.addIncludePath(b.path("lib/libsndfile/include"));
 
     if (target.result.isDarwin()) {
         exe.linkFramework("Foundation");
@@ -58,13 +58,15 @@ pub fn build(b: *std.Build) void {
     }
 
     // Link whisper
-    exe.addLibraryPath(b.path("whisper.cpp"));
-    exe.addObjectFile(b.path("whisper.cpp/build/ggml/src/libggml.a"));
-    exe.addObjectFile(b.path("whisper.cpp/build/src/libwhisper.a"));
+    exe.addLibraryPath(b.path("lib/whisper.cpp/build/src"));
+    exe.linkSystemLibrary("whisper");
+
+    exe.addLibraryPath(b.path("lib/whisper.cpp/build/ggml/src"));
+    exe.linkSystemLibrary("ggml");
 
     // Link libsndfile
-    exe.addLibraryPath(b.path("libsndfile"));
-    exe.addObjectFile(b.path("libsndfile/build/libsndfile.a"));
+    exe.addLibraryPath(b.path("lib/libsndfile/build"));
+    exe.linkSystemLibrary("sndfile");
 
     // exe.linkLibC();
     exe.linkLibCpp();

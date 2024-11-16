@@ -1,6 +1,6 @@
 [submodule "whisper.cpp"]
-	path = whisper.cpp
+	path = lib/whisper.cpp
 	url = https://github.com/ggerganov/whisper.cpp.git
 [submodule "libsndfile"]
-	path = libsndfile
+	path = lib/libsndfile
 	url = https://github.com/libsndfile/libsndfile
