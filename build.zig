@@ -1,14 +1,13 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     // Config whisper
     const whisper_build_dir = b.path("lib/whisper.cpp/build");
-    const whisper_mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p", whisper_build_dir.getPath(b) });
+    std.fs.cwd().makeDir("lib/whisper.cpp/build") catch {};
     const whisper_configure = b.addSystemCommand(&.{ "cmake", "-B", whisper_build_dir.getPath(b), "-S", "lib/whisper.cpp", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DGGML_METAL_EMBED_LIBRARY=OFF", "-DGGML_METAL=OFF", "-DGGML_OPENMP=OFF", "-DWHISPER_BUILD_EXAMPLES=OFF", "-DWHISPER_BUILD_TESTS=OFF" });
-    whisper_configure.step.dependOn(&whisper_mkdir_cmd.step);
 
     // Build whisper
     const whisper_build = b.addSystemCommand(&.{
@@ -22,9 +21,8 @@ pub fn build(b: *std.Build) void {
 
     // Config libsndfile
     const libsnd_build_dir = b.path("lib/libsndfile/build");
-    const libsnd_mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p", libsnd_build_dir.getPath(b) });
+    std.fs.cwd().makeDir("lib/libsndfile/build") catch {};
     const libsnd_configure = b.addSystemCommand(&.{ "cmake", "-B", libsnd_build_dir.getPath(b), "-S", "lib/libsndfile", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DENABLE_EXTERNAL_LIBS=OFF", "-DENABLE_MPEG=OFF" });
-    libsnd_configure.step.dependOn(&libsnd_mkdir_cmd.step);
 
     // Build whisper
     const libsnd_build = b.addSystemCommand(&.{
@@ -59,13 +57,18 @@ pub fn build(b: *std.Build) void {
 
     // Link whisper
     exe.addLibraryPath(b.path("lib/whisper.cpp/build/src"));
+    // Windows
+    exe.addLibraryPath(b.path("lib/whisper.cpp/build/src/Release"));
     exe.linkSystemLibrary("whisper");
 
     exe.addLibraryPath(b.path("lib/whisper.cpp/build/ggml/src"));
+    // Windows
+    exe.addLibraryPath(b.path("lib/whisper.cpp/build/ggml/src/Release"));
     exe.linkSystemLibrary("ggml");
 
     // Link libsndfile
     exe.addLibraryPath(b.path("lib/libsndfile/build"));
+    exe.addLibraryPath(b.path("lib/libsndfile/build/Release"));
     exe.linkSystemLibrary("sndfile");
 
     // exe.linkLibC();
