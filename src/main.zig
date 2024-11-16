@@ -42,7 +42,7 @@ pub fn main() !void {
     }
 
     // whisper
-    whisper.whisper_log_set(whisper_log_callback, null);
+    // whisper.whisper_log_set(whisper_log_callback, null);
 
     const cparams: whisper.whisper_context_params = whisper.whisper_context_default_params();
 
