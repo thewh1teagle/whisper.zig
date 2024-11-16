@@ -1,3 +1,8 @@
+// wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+// wget https://github.com/thewh1teagle/vibe/raw/refs/heads/main/samples/short.wav
+// zig build
+// zig-out/bin/whisper.zig
+
 const std = @import("std");
 
 const whisper = @cImport({

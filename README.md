@@ -5,9 +5,3 @@ Transcribe audio with whisper in Zig
 ## Building
 
 See [Building.md](BUILDING.md)
-
-## Usage
-
-```console
-./whisper.zig
-```
