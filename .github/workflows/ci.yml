@@ -1,0 +1,29 @@
+name: Zig Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@main
+      - uses: mlugg/setup-zig@v1
+        with:
+          version: master
+      - name: Build Summary
+        run: zig build --summary all -freference-trace
+
+  zig-msvc:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v1
+        with:
+          version: master
+      - name: Build Summary x86_64-windows-msvc
+        run: zig build --summary all -freference-trace -Dtarget=native-windows-msvc
