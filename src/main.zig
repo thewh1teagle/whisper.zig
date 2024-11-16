@@ -20,7 +20,8 @@ pub fn main() !void {
         return error.FileOpenFailed;
     }
 
-    const cparams: whisper.whisper_context_params = whisper.whisper_context_default_params();
+    var cparams: whisper.whisper_context_params = whisper.whisper_context_default_params();
+    cparams.use_gpu = false;
 
     const ctx = whisper.whisper_init_from_file_with_params(model_path, cparams);
     if (ctx == null) {

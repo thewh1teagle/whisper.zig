@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     // Config whisper
     const whisper_build_dir = b.path("whisper.cpp/build");
     const whisper_mkdir_cmd = b.addSystemCommand(&.{ "mkdir", "-p", whisper_build_dir.getPath(b) });
-    const whisper_configure = b.addSystemCommand(&.{ "cmake", "-B", whisper_build_dir.getPath(b), "-S", "whisper.cpp", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DGGML_METAL_EMBED_LIBRARY=OFF", "-DGGML_METAL=OFF", "-DGGML_OPENMP=OFF" });
+    const whisper_configure = b.addSystemCommand(&.{ "cmake", "-B", whisper_build_dir.getPath(b), "-S", "whisper.cpp", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DGGML_METAL_EMBED_LIBRARY=ON", "-DGGML_METAL=ON", "-DGGML_OPENMP=OFF" });
     whisper_configure.step.dependOn(&whisper_mkdir_cmd.step);
 
     // Build whisper
@@ -43,6 +43,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     // Add whisper include path
+    exe.addIncludePath(b.path("whisper.cpp/src"));
+    exe.addIncludePath(b.path("whisper.cpp/src/include"));
     exe.addIncludePath(b.path("whisper.cpp/include"));
     exe.addIncludePath(b.path("whisper.cpp/ggml/include"));
 
