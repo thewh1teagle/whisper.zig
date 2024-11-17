@@ -3,8 +3,8 @@
     .version = "0.1.0",
     .dependencies = .{
         .whisper = .{
-            .url = "git+https://github.com/ggerganov/whisper.cpp#v1.7.1",
-            .hash = "1220c0637440b73bf3c395bf2c02da94de30e0943558715c8f1ed7c2ce66a3e50534",
+            .url = "git+https://github.com/ggerganov/whisper.cpp#01d3bd7d5ccd1956a7ddf1b57ee92d69f35aad93",
+            .hash = "1220c555fec26a504979f72c0586a7d9afa0497dddfc40a66a44aa9c3f44eecdf702",
         },
         .libsndfile = .{
             .url = "git+https://github.com/libsndfile/libsndfile#0d3f80b7394368623df558d8ba3fee6348584d4d",
