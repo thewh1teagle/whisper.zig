@@ -20,7 +20,7 @@ jobs:
           - platform: "macos-latest"
           - build-args: "--summary all -freference-trace"
 
-    runs-on: ${{matrix.platform}}
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@main
       - uses: lukka/get-cmake@latest
