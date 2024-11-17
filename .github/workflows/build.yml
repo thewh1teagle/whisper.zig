@@ -12,13 +12,13 @@ jobs:
       matrix:
         include:
           - platform: "windows-latest"
-          - build-args: "-Dtarget=x86_64-windows-msvc --summary all -freference-trace"
+            build-args: "-Dtarget=x86_64-windows-msvc --summary all -freference-trace"
 
           - platform: "ubuntu-latest"
-          - build-args: "--summary all -freference-trace"
+            build-args: "--summary all -freference-trace"
 
           - platform: "macos-latest"
-          - build-args: "--summary all -freference-trace"
+            build-args: "--summary all -freference-trace"
 
     runs-on: ${{ matrix.platform }}
     steps:
