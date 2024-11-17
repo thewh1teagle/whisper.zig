@@ -1,13 +1,33 @@
 name: Zig Build
 
-on: [push, pull_request, workflow_dispatch]
+on: 
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{matrix.os}}
+        include:
+          - platform: "windows-latest"
+            build-args: "-Dtarget=x86_64-windows-msvc --summary all -freference-trace"
+            env:
+              CC: "clang"
+              CXX: "clang++"
+
+          - platform: "ubuntu-latest"
+            build-args: "--summary all -freference-trace"
+
+          - platform: "macos-latest"
+            build-args: "--summary all -freference-trace"
+
+    runs-on: ${{ matrix.platform }}
+    env:
+      CC: ${{ matrix.env.CC }}
+      CXX: ${{ matrix.env.CXX }}
+
     steps:
       - uses: actions/checkout@main
       - uses: lukka/get-cmake@latest
@@ -18,7 +38,7 @@ jobs:
         with:
           version: master
       - name: Build Summary
-        run: zig build --summary all -freference-trace
+        run: zig build ${{ matrix.build-args }}
 
   msys2-mingw:
     runs-on: windows-latest
