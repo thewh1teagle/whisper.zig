@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@main
@@ -16,14 +16,36 @@ jobs:
       - name: Build Summary
         run: zig build --summary all -freference-trace
 
-  zig-msvc:
+  msys2-mingw:
     runs-on: windows-latest
     strategy:
       fail-fast: false
+      matrix:
+        include:
+        # - { sys: mingw64, env: x86_64 } # msvcrt + libstdc++
+        # - { sys: ucrt64,  env: ucrt-x86_64 } # ucrt + libstdc++
+        - { sys: clang64, env: clang-x86_64 } # ucrt + libc++
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@main
+        with:
+          path: temp
+          submodules: recursive
+          fetch-depth: 0
       - uses: mlugg/setup-zig@v1
         with:
           version: master
-      - name: Build Summary x86_64-windows-msvc
-        run: zig build --summary all -freference-trace -Dtarget=native-windows-msvc
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.sys }}
+          path-type: inherit
+          location: D:\
+          install: git mingw-w64-${{matrix.env}}-cmake mingw-w64-${{matrix.env}}-toolchain
+          update: true
+      - name: Move Checkout
+        run: |
+          Copy-Item -Path ".\temp" -Destination "C:\_" -Recurse
+      - name: Build Summary
+        shell: msys2 {0}
+        run: |
+            cd /C/_
+            zig build --summary all -freference-trace
