@@ -6,7 +6,7 @@ pub fn build(b: *std.Build) !void {
 
     // Options
     // zig build -Dvulkan=true
-    const EnableVulkan = b.option(bool, "vulkan", "Enable Vulkan support").?;
+    const EnableVulkan = b.option(bool, "vulkan", "Enable Vulkan support") orelse false;
 
     // rootpath from zig-package (zig GLOBAL_CACHE_DIR)
     const whisperLazyPath = b.dependency("whisper", .{}).path("");
