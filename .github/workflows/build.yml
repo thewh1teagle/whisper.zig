@@ -13,6 +13,9 @@ jobs:
         include:
           - platform: "windows-latest"
             build-args: "-Dtarget=x86_64-windows-msvc --summary all -freference-trace"
+            env:
+              CC: cl
+              CXX: "cl"
 
           - platform: "ubuntu-latest"
             build-args: "--summary all -freference-trace"
@@ -21,6 +24,10 @@ jobs:
             build-args: "--summary all -freference-trace"
 
     runs-on: ${{ matrix.platform }}
+    env:
+      CC: ${{ matrix.env.CC }}
+      CXX: ${{ matrix.env.CXX }}
+
     steps:
       - uses: actions/checkout@main
       - uses: lukka/get-cmake@latest
