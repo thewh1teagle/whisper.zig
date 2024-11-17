@@ -49,18 +49,18 @@ pub fn build(b: *std.Build) !void {
 
     // cmake build --config Debug|Release path
     if (exe.rootModuleTarget().abi == .msvc) {
-        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/src/{s}"), .{b.fmt("{s}", .{switch (args.optimize) {
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/src/{s}", .{switch (optimize) {
             .Debug => "Debug",
             else => "Release",
-        }})}));
-        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/ggml/src/{s}"), .{b.fmt("{s}", .{switch (args.optimize) {
+        }})));
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/ggml/src/{s}", .{switch (optimize) {
             .Debug => "Debug",
             else => "Release",
-        }})}));
-        exe.addLibraryPath(b.path(b.fmt(".zig-cache/libsndfile/{s}"), .{b.fmt("{s}", .{switch (args.optimize) {
+        }})));
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/libsndfile/{s}", .{switch (optimize) {
             .Debug => "Debug",
             else => "Release",
-        }})}));
+        }})));
     } else {
         exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
         exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
