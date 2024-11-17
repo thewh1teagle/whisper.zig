@@ -83,14 +83,24 @@ pub fn build(b: *std.Build) !void {
         exe.linkSystemLibrary("sndfile");
         exe.linkSystemLibrary("whisper");
         exe.linkSystemLibrary("ggml");
+    } else if (exe.rootModuleTarget().isMinGW()) {
+        exe.linkSystemLibrary2("libsndfile", .{
+            .use_pkg_config = .no,
+        });
+        exe.linkSystemLibrary2("libwhisper", .{
+            .use_pkg_config = .no,
+        });
+        exe.linkSystemLibrary2("libggml", .{
+            .use_pkg_config = .no,
+        });
     } else {
-        exe.linkSystemLibrary2("libsndfile.dll", .{
+        exe.linkSystemLibrary2("sndfile", .{
             .use_pkg_config = .no,
         });
-        exe.linkSystemLibrary2("libwhisper.dll", .{
+        exe.linkSystemLibrary2("whisper", .{
             .use_pkg_config = .no,
         });
-        exe.linkSystemLibrary2("libggml.dll", .{
+        exe.linkSystemLibrary2("ggml", .{
             .use_pkg_config = .no,
         });
     }
