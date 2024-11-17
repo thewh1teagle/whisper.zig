@@ -84,13 +84,13 @@ pub fn build(b: *std.Build) !void {
         exe.linkSystemLibrary("whisper");
         exe.linkSystemLibrary("ggml");
     } else {
-        exe.linkSystemLibrary2("sndfile", .{
+        exe.linkSystemLibrary2("libsndfile.dll", .{
             .use_pkg_config = .no,
         });
-        exe.linkSystemLibrary2("whisper", .{
+        exe.linkSystemLibrary2("libwhisper.dll", .{
             .use_pkg_config = .no,
         });
-        exe.linkSystemLibrary2("ggml", .{
+        exe.linkSystemLibrary2("libggml.dll", .{
             .use_pkg_config = .no,
         });
     }
@@ -150,10 +150,9 @@ fn buildWhisper(b: *std.Build, args: struct {
         whisper_configure.addArgs(&.{
             "-G",
             "MinGW Makefiles",
-            "-DBUILD_SHARED_LIBS=ON",
         });
     }
-    if (args.target.result.os.tag == .linux)
+    if (args.target.result.os.tag == .linux or args.target.result.os.tag == .windows)
         whisper_configure.addArgs(&.{
             "-DBUILD_SHARED_LIBS=ON",
         });
@@ -202,10 +201,9 @@ fn buildSNDFile(b: *std.Build, args: struct {
         libsnd_configure.addArgs(&.{
             "-G",
             "MinGW Makefiles",
-            "-DBUILD_SHARED_LIBS=ON",
         });
     }
-    if (args.target.result.os.tag == .linux)
+    if (args.target.result.os.tag == .linux or args.target.result.os.tag == .windows)
         libsnd_configure.addArgs(&.{
             "-DBUILD_SHARED_LIBS=ON",
         });
