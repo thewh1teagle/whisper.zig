@@ -45,6 +45,8 @@ cd whisper.zig
 ```
 
 ### Run
+
+```
 cd zig-out/bin
 wget -nc https://github.com/thewh1teagle/vibe/raw/refs/heads/main/samples/short.wav
 wget -nc https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
