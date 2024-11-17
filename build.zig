@@ -62,8 +62,8 @@ pub fn build(b: *std.Build) !void {
             else => "Release",
         }})));
     } else if (exe.rootModuleTarget().isMinGW()) {
-        exe.addLibraryPath(b.path(".zig-cache/whisper_build/src/bin"));
-        exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src/bin"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/bin"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/bin"));
         exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
     } else {
         exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
