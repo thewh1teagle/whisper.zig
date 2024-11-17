@@ -47,9 +47,25 @@ pub fn build(b: *std.Build) !void {
         .cwd_relative = b.pathJoin(&.{ sndFileLazyPath.getPath(b), "include" }),
     });
 
-    exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
-    exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
-    exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
+    // cmake build --config Debug|Release path
+    if (exe.rootModuleTarget().abi == .msvc) {
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/src/{s}"), .{b.fmt("{s}", .{switch (args.optimize) {
+            .Debug => "Debug",
+            else => "Release",
+        }})}));
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/ggml/src/{s}"), .{b.fmt("{s}", .{switch (args.optimize) {
+            .Debug => "Debug",
+            else => "Release",
+        }})}));
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/libsndfile/{s}"), .{b.fmt("{s}", .{switch (args.optimize) {
+            .Debug => "Debug",
+            else => "Release",
+        }})}));
+    } else {
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
+        exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
+    }
 
     if (exe.rootModuleTarget().isDarwin()) {
         exe.linkFramework("Foundation");
