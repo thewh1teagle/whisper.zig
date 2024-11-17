@@ -48,6 +48,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
+    exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
     exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
 
     if (exe.rootModuleTarget().isDarwin()) {
@@ -61,11 +62,15 @@ pub fn build(b: *std.Build) !void {
     if (exe.rootModuleTarget().os.tag != .windows) {
         exe.linkSystemLibrary("sndfile");
         exe.linkSystemLibrary("whisper");
+        exe.linkSystemLibrary("ggml");
     } else {
         exe.linkSystemLibrary2("sndfile", .{
             .use_pkg_config = .no,
         });
         exe.linkSystemLibrary2("whisper", .{
+            .use_pkg_config = .no,
+        });
+        exe.linkSystemLibrary2("ggml", .{
             .use_pkg_config = .no,
         });
     }
