@@ -1,7 +1,16 @@
 .{
     .name = "whisper.zig",
     .version = "0.1.0",
-    .dependencies = .{},
+    .dependencies = .{
+        .whisper = .{
+            .url = "git+https://github.com/ggerganov/whisper.cpp#v1.7.1",
+            .hash = "1220c0637440b73bf3c395bf2c02da94de30e0943558715c8f1ed7c2ce66a3e50534",
+        },
+        .libsndfile = .{
+            .url = "git+https://github.com/libsndfile/libsndfile#0d3f80b7394368623df558d8ba3fee6348584d4d",
+            .hash = "12205cebfa8a6dd8005c33000d86b6751ace4b4d2ec66b100a000b98ae88c2e7dd38",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",

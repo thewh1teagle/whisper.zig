@@ -4,80 +4,106 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Config whisper
-    const whisper_build_dir = b.path("lib/whisper.cpp/build");
-    std.fs.cwd().makeDir("lib/whisper.cpp/build") catch {};
-    const whisper_configure = b.addSystemCommand(&.{ "cmake", "-B", whisper_build_dir.getPath(b), "-S", "lib/whisper.cpp", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DGGML_METAL_EMBED_LIBRARY=OFF", "-DGGML_METAL=OFF", "-DGGML_OPENMP=OFF", "-DWHISPER_BUILD_EXAMPLES=OFF", "-DWHISPER_BUILD_TESTS=OFF" });
+    // rootpath from zig-package (zig GLOBAL_CACHE_DIR)
+    const whisperLazyPath = b.dependency("whisper", .{}).path("");
+    const sndFileLazyPath = b.dependency("libsndfile", .{}).path("");
 
-    // Build whisper
-    const whisper_build = b.addSystemCommand(&.{
-        "cmake",
-        "--build",
-        whisper_build_dir.getPath(b),
-        "--config",
-        "Release",
+    // =============== Whisper library ====================
+    const whisper_build = buildWhisper(b, .{
+        .target = target,
+        .optimize = optimize,
+        .dep_path = whisperLazyPath,
     });
-    whisper_build.step.dependOn(&whisper_configure.step);
 
-    // Config libsndfile
-    const libsnd_build_dir = b.path("lib/libsndfile/build");
-    std.fs.cwd().makeDir("lib/libsndfile/build") catch {};
-    const libsnd_configure = b.addSystemCommand(&.{ "cmake", "-B", libsnd_build_dir.getPath(b), "-S", "lib/libsndfile", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF", "-DENABLE_EXTERNAL_LIBS=OFF", "-DENABLE_MPEG=OFF" });
-
-    // Build whisper
-    const libsnd_build = b.addSystemCommand(&.{
-        "cmake",
-        "--build",
-        libsnd_build_dir.getPath(b),
-        "--config",
-        "Release",
+    // =============== SNDFile library ====================
+    const sndfile_build = buildSNDFile(b, .{
+        .target = target,
+        .optimize = optimize,
+        .dep_path = sndFileLazyPath,
     });
-    libsnd_build.step.dependOn(&libsnd_configure.step);
 
+    // =============== Main executable ====================
     const exe = b.addExecutable(.{
         .name = "whisper.zig",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
-    // Add whisper include path
-    exe.addIncludePath(b.path("lib/whisper.cpp/src"));
-    exe.addIncludePath(b.path("lib/whisper.cpp/src/include"));
-    exe.addIncludePath(b.path("lib/whisper.cpp/include"));
-    exe.addIncludePath(b.path("lib/whisper.cpp/ggml/include"));
+    // Add whisper include path (abspath)
+    exe.addIncludePath(.{
+        .cwd_relative = b.pathJoin(&.{ whisperLazyPath.getPath(b), "include" }),
+    });
+    exe.addIncludePath(.{
+        .cwd_relative = b.pathJoin(&.{ whisperLazyPath.getPath(b), "ggml", "include" }),
+    });
+    exe.addIncludePath(.{
+        .cwd_relative = b.pathJoin(&.{ whisperLazyPath.getPath(b), "src", "include" }),
+    });
+    exe.addIncludePath(.{
+        .cwd_relative = b.pathJoin(&.{ whisperLazyPath.getPath(b), "src" }),
+    });
+    // Add libsndfile include path (abspath)
+    exe.addIncludePath(.{
+        .cwd_relative = b.pathJoin(&.{ sndFileLazyPath.getPath(b), "include" }),
+    });
 
-    // Add libsndfile include path
-    exe.addIncludePath(b.path("lib/libsndfile/include"));
+    // cmake build --config Debug|Release path
+    if (exe.rootModuleTarget().abi == .msvc) {
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/src/{s}", .{switch (optimize) {
+            .Debug => "Debug",
+            else => "Release",
+        }})));
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/whisper_build/ggml/src/{s}", .{switch (optimize) {
+            .Debug => "Debug",
+            else => "Release",
+        }})));
+        exe.addLibraryPath(b.path(b.fmt(".zig-cache/libsndfile/{s}", .{switch (optimize) {
+            .Debug => "Debug",
+            else => "Release",
+        }})));
+    } else if (exe.rootModuleTarget().isMinGW()) {
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
+        exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
+    } else {
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
+        exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
+    }
 
-    if (target.result.isDarwin()) {
+    if (exe.rootModuleTarget().isDarwin()) {
         exe.linkFramework("Foundation");
         exe.linkFramework("Accelerate");
         exe.linkFramework("Metal");
     }
-
-    // Link whisper
-    exe.addLibraryPath(b.path("lib/whisper.cpp/build/src"));
-    // Windows
-    exe.addLibraryPath(b.path("lib/whisper.cpp/build/src/Release"));
-    exe.linkSystemLibrary("whisper");
-
-    exe.addLibraryPath(b.path("lib/whisper.cpp/build/ggml/src"));
-    // Windows
-    exe.addLibraryPath(b.path("lib/whisper.cpp/build/ggml/src/Release"));
-    exe.linkSystemLibrary("ggml");
-
-    // Link libsndfile
-    exe.addLibraryPath(b.path("lib/libsndfile/build"));
-    exe.addLibraryPath(b.path("lib/libsndfile/build/Release"));
-    exe.linkSystemLibrary("sndfile");
-
-    exe.linkLibCpp();
-    exe.linkLibC();
-
-    exe.step.dependOn(&libsnd_build.step);
     exe.step.dependOn(&whisper_build.step);
+    exe.step.dependOn(&sndfile_build.step);
 
+    if (exe.rootModuleTarget().os.tag != .windows) {
+        exe.linkSystemLibrary("sndfile");
+        exe.linkSystemLibrary("whisper");
+        exe.linkSystemLibrary("ggml");
+    } else {
+        exe.linkSystemLibrary2("sndfile", .{
+            .use_pkg_config = .no,
+        });
+        exe.linkSystemLibrary2("whisper", .{
+            .use_pkg_config = .no,
+        });
+        exe.linkSystemLibrary2("ggml", .{
+            .use_pkg_config = .no,
+        });
+    }
+
+    if (exe.rootModuleTarget().abi == .msvc) {
+        exe.linkLibC();
+        exe.linkSystemLibrary("Advapi32");
+    } else {
+        exe.defineCMacro("_GNU_SOURCE", null);
+        exe.linkLibCpp();
+    }
     b.installArtifact(exe);
+
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
@@ -85,4 +111,109 @@ pub fn build(b: *std.Build) !void {
     }
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+}
+
+fn buildWhisper(b: *std.Build, args: struct {
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    dep_path: std.Build.LazyPath,
+}) *std.Build.Step.Run {
+    const whisper_path = args.dep_path.getPath(b);
+    const whisper_configure = b.addSystemCommand(&.{
+        "cmake",
+        "-G",
+        "Ninja",
+        "-B",
+        ".zig-cache/whisper_build",
+        "-S",
+        whisper_path,
+        b.fmt("-DCMAKE_BUILD_TYPE={s}", .{switch (args.optimize) {
+            .Debug => "Debug",
+            .ReleaseFast => "Release",
+            .ReleaseSafe => "RelWithDebInfo",
+            .ReleaseSmall => "MinSizeRel",
+        }}),
+        "-DGGML_OPENMP=OFF",
+        "-DWHISPER_BUILD_EXAMPLES=OFF",
+        "-DWHISPER_BUILD_TESTS=OFF",
+    });
+    if (args.target.result.isDarwin())
+        whisper_configure.addArgs(&.{
+            "-DGGML_METAL_EMBED_LIBRARY=OFF",
+            "-DGGML_METAL=ON",
+        })
+    else
+        whisper_configure.addArgs(&.{
+            "-DGGML_METAL_EMBED_LIBRARY=OFF",
+            "-DGGML_METAL=OFF",
+        });
+    // static link in Windows
+    if (args.target.result.os.tag == .windows)
+        whisper_configure.addArgs(&.{
+            "-DBUILD_SHARED_LIBS=OFF",
+        });
+    const whisper_build = b.addSystemCommand(&.{
+        "cmake",
+        "--build",
+        ".zig-cache/whisper_build",
+    });
+    if (args.target.result.abi == .msvc) {
+        whisper_build.addArgs(&.{
+            "--config",
+            b.fmt("{s}", .{switch (args.optimize) {
+                .Debug => "Debug",
+                else => "Release",
+            }}),
+        });
+    }
+    whisper_build.step.dependOn(&whisper_configure.step);
+    return whisper_build;
+}
+
+fn buildSNDFile(b: *std.Build, args: struct {
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    dep_path: std.Build.LazyPath,
+}) *std.Build.Step.Run {
+    const sndfile_path = args.dep_path.getPath(b); // LazyPath to string
+
+    const libsnd_configure = b.addSystemCommand(&.{
+        "cmake",
+        "-G",
+        "Ninja",
+        "-B",
+        ".zig-cache/libsndfile",
+        "-S",
+        sndfile_path,
+        b.fmt("-DCMAKE_BUILD_TYPE={s}", .{switch (args.optimize) {
+            .Debug => "Debug",
+            .ReleaseFast => "Release",
+            .ReleaseSafe => "RelWithDebInfo",
+            .ReleaseSmall => "MinSizeRel",
+        }}),
+        "-DENABLE_EXTERNAL_LIBS=OFF",
+        "-DENABLE_MPEG=OFF",
+    });
+    // static link in Windows
+    if (args.target.result.os.tag == .windows)
+        libsnd_configure.addArgs(&.{
+            "-DBUILD_SHARED_LIBS=OFF",
+        });
+
+    const libsnd_build = b.addSystemCommand(&.{
+        "cmake",
+        "--build",
+        ".zig-cache/libsndfile",
+    });
+    if (args.target.result.abi == .msvc) {
+        libsnd_build.addArgs(&.{
+            "--config",
+            b.fmt("{s}", .{switch (args.optimize) {
+                .Debug => "Debug",
+                else => "Release",
+            }}),
+        });
+    }
+    libsnd_build.step.dependOn(&libsnd_configure.step);
+    return libsnd_build;
 }
