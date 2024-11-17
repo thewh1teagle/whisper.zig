@@ -112,7 +112,6 @@ fn buildWhisper(b: *std.Build, args: struct {
             .ReleaseSmall => "MinSizeRel",
         }}),
         "-DGGML_OPENMP=OFF",
-        "-DBUILD_SHARED_LIBS=OFF",
         "-DWHISPER_BUILD_EXAMPLES=OFF",
         "-DWHISPER_BUILD_TESTS=OFF",
     });
@@ -128,8 +127,16 @@ fn buildWhisper(b: *std.Build, args: struct {
         });
 
     if (args.target.result.isMinGW()) {
-        whisper_configure.addArgs(&.{ "-G", "MinGW Makefiles" });
+        whisper_configure.addArgs(&.{
+            "-G",
+            "MinGW Makefiles",
+            "-DBUILD_SHARED_LIBS=ON",
+        });
     }
+    if (args.target.result.os.tag == .linux)
+        whisper_configure.addArgs(&.{
+            "-DBUILD_SHARED_LIBS=ON",
+        });
     const whisper_build = b.addSystemCommand(&.{
         "cmake",
         "--build",
@@ -172,9 +179,16 @@ fn buildSNDFile(b: *std.Build, args: struct {
         "-DENABLE_MPEG=OFF",
     });
     if (args.target.result.isMinGW()) {
-        libsnd_configure.addArgs(&.{ "-G", "MinGW Makefiles" });
+        libsnd_configure.addArgs(&.{
+            "-G",
+            "MinGW Makefiles",
+            "-DBUILD_SHARED_LIBS=ON",
+        });
     }
-
+    if (args.target.result.os.tag == .linux)
+        libsnd_configure.addArgs(&.{
+            "-DBUILD_SHARED_LIBS=ON",
+        });
     const libsnd_build = b.addSystemCommand(&.{
         "cmake",
         "--build",
