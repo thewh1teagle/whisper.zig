@@ -147,7 +147,8 @@ fn buildWhisper(b: *std.Build, args: struct {
             "-DGGML_METAL_EMBED_LIBRARY=OFF",
             "-DGGML_METAL=OFF",
         });
-    if (args.target.result.os.tag == .linux or args.target.result.os.tag == .windows)
+    // static link in Windows
+    if (args.target.result.os.tag == .windows)
         whisper_configure.addArgs(&.{
             "-DBUILD_SHARED_LIBS=OFF",
         });
@@ -190,10 +191,14 @@ fn buildSNDFile(b: *std.Build, args: struct {
             .ReleaseSafe => "RelWithDebInfo",
             .ReleaseSmall => "MinSizeRel",
         }}),
-        "-DBUILD_SHARED_LIBS=OFF",
         "-DENABLE_EXTERNAL_LIBS=OFF",
         "-DENABLE_MPEG=OFF",
     });
+    // static link in Windows
+    if (args.target.result.os.tag == .windows)
+        libsnd_configure.addArgs(&.{
+            "-DBUILD_SHARED_LIBS=OFF",
+        });
 
     const libsnd_build = b.addSystemCommand(&.{
         "cmake",
