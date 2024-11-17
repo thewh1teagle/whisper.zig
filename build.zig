@@ -62,7 +62,8 @@ pub fn build(b: *std.Build) !void {
             else => "Release",
         }})));
     } else if (exe.rootModuleTarget().isMinGW()) {
-        exe.addLibraryPath(b.path(".zig-cache/whisper_build/bin"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
+        exe.addLibraryPath(b.path(".zig-cache/whisper_build/ggml/src"));
         exe.addLibraryPath(b.path(".zig-cache/libsndfile"));
     } else {
         exe.addLibraryPath(b.path(".zig-cache/whisper_build/src"));
@@ -82,16 +83,6 @@ pub fn build(b: *std.Build) !void {
         exe.linkSystemLibrary("sndfile");
         exe.linkSystemLibrary("whisper");
         exe.linkSystemLibrary("ggml");
-    } else if (exe.rootModuleTarget().isMinGW()) {
-        exe.linkSystemLibrary2("libsndfile", .{
-            .use_pkg_config = .no,
-        });
-        exe.linkSystemLibrary2("libwhisper", .{
-            .use_pkg_config = .no,
-        });
-        exe.linkSystemLibrary2("libggml", .{
-            .use_pkg_config = .no,
-        });
     } else {
         exe.linkSystemLibrary2("sndfile", .{
             .use_pkg_config = .no,
@@ -130,6 +121,8 @@ fn buildWhisper(b: *std.Build, args: struct {
     const whisper_path = args.dep_path.getPath(b);
     const whisper_configure = b.addSystemCommand(&.{
         "cmake",
+        "-G",
+        "Ninja",
         "-B",
         ".zig-cache/whisper_build",
         "-S",
@@ -154,16 +147,9 @@ fn buildWhisper(b: *std.Build, args: struct {
             "-DGGML_METAL_EMBED_LIBRARY=OFF",
             "-DGGML_METAL=OFF",
         });
-
-    if (args.target.result.isMinGW()) {
-        whisper_configure.addArgs(&.{
-            "-G",
-            "MinGW Makefiles",
-        });
-    }
     if (args.target.result.os.tag == .linux or args.target.result.os.tag == .windows)
         whisper_configure.addArgs(&.{
-            "-DBUILD_SHARED_LIBS=ON",
+            "-DBUILD_SHARED_LIBS=OFF",
         });
     const whisper_build = b.addSystemCommand(&.{
         "cmake",
@@ -192,6 +178,8 @@ fn buildSNDFile(b: *std.Build, args: struct {
 
     const libsnd_configure = b.addSystemCommand(&.{
         "cmake",
+        "-G",
+        "Ninja",
         "-B",
         ".zig-cache/libsndfile",
         "-S",
@@ -206,16 +194,7 @@ fn buildSNDFile(b: *std.Build, args: struct {
         "-DENABLE_EXTERNAL_LIBS=OFF",
         "-DENABLE_MPEG=OFF",
     });
-    if (args.target.result.isMinGW()) {
-        libsnd_configure.addArgs(&.{
-            "-G",
-            "MinGW Makefiles",
-        });
-    }
-    if (args.target.result.os.tag == .linux or args.target.result.os.tag == .windows)
-        libsnd_configure.addArgs(&.{
-            "-DBUILD_SHARED_LIBS=ON",
-        });
+
     const libsnd_build = b.addSystemCommand(&.{
         "cmake",
         "--build",
