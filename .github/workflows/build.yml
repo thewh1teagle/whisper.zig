@@ -14,8 +14,8 @@ jobs:
           - platform: "windows-latest"
             build-args: "-Dtarget=x86_64-windows-msvc --summary all -freference-trace"
             env:
-              CC: cl
-              CXX: "cl"
+              CC: "clang"
+              CXX: "clang++"
 
           - platform: "ubuntu-latest"
             build-args: "--summary all -freference-trace"
