@@ -32,6 +32,18 @@ cd whisper.zig
 "C:\bin\zig\zig.exe" build
 ```
 
+### Build with Vulkan
+
+1. Install [VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
+2. Set `VULKAN_SDK` env var
+3. Build
+
+```console
+git clone https://github.com/thewh1teagle/whisper.zig
+cd whisper.zig
+"C:\bin\zig\zig.exe" build -Dvulkan=true
+```
+
 ### Run
 cd zig-out/bin
 wget -nc https://github.com/thewh1teagle/vibe/raw/refs/heads/main/samples/short.wav

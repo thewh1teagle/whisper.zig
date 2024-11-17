@@ -4,16 +4,16 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Options
+    // zig build -Dvulkan=true
+    const EnableVulkan = b.option(bool, "vulkan", "Enable Vulkan support").?;
+
     // rootpath from zig-package (zig GLOBAL_CACHE_DIR)
     const whisperLazyPath = b.dependency("whisper", .{}).path("");
     const sndFileLazyPath = b.dependency("libsndfile", .{}).path("");
 
     // =============== Whisper library ====================
-    const whisper_build = buildWhisper(b, .{
-        .target = target,
-        .optimize = optimize,
-        .dep_path = whisperLazyPath,
-    });
+    const whisper_build = buildWhisper(b, .{ .target = target, .optimize = optimize, .dep_path = whisperLazyPath, .enable_vulkan = EnableVulkan });
 
     // =============== SNDFile library ====================
     const sndfile_build = buildSNDFile(b, .{
@@ -79,6 +79,30 @@ pub fn build(b: *std.Build) !void {
     exe.step.dependOn(&whisper_build.step);
     exe.step.dependOn(&sndfile_build.step);
 
+    if (EnableVulkan) {
+        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        defer arena.deinit();
+
+        var env = try std.process.getEnvMap(arena.allocator());
+        defer env.deinit();
+
+        const sdkPath = env.get("VULKAN_SDK") orelse {
+            @panic("VULKAN_SDK environment variable not found. Required for Vulkan support.");
+        };
+
+        // Create the path string
+        const libPath = try std.fs.path.join(arena.allocator(), &[_][]const u8{ sdkPath, "lib" });
+        // Convert to LazyPath using .getPath()
+
+        // exe.addLibraryPath(b.path(libPath).path(""), .{});
+        exe.addLibraryPath(.{ .cwd_relative = libPath });
+        if (exe.rootModuleTarget().os.tag == .windows) {
+            exe.linkSystemLibrary("vulkan-1");
+        } else {
+            exe.linkSystemLibrary("vulkan");
+        }
+    }
+
     if (exe.rootModuleTarget().os.tag != .windows) {
         exe.linkSystemLibrary("sndfile");
         exe.linkSystemLibrary("whisper");
@@ -113,11 +137,7 @@ pub fn build(b: *std.Build) !void {
     run_step.dependOn(&run_cmd.step);
 }
 
-fn buildWhisper(b: *std.Build, args: struct {
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    dep_path: std.Build.LazyPath,
-}) *std.Build.Step.Run {
+fn buildWhisper(b: *std.Build, args: struct { target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, dep_path: std.Build.LazyPath, enable_vulkan: bool }) *std.Build.Step.Run {
     const whisper_path = args.dep_path.getPath(b);
     const whisper_configure = b.addSystemCommand(&.{
         "cmake",
@@ -137,6 +157,11 @@ fn buildWhisper(b: *std.Build, args: struct {
         "-DWHISPER_BUILD_EXAMPLES=OFF",
         "-DWHISPER_BUILD_TESTS=OFF",
     });
+
+    if (args.enable_vulkan) {
+        whisper_configure.addArgs(&.{"-DGGML_VULKAN=ON"});
+    }
+
     if (args.target.result.isDarwin())
         whisper_configure.addArgs(&.{
             "-DGGML_METAL_EMBED_LIBRARY=OFF",
