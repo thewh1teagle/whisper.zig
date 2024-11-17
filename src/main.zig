@@ -1,8 +1,3 @@
-// wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
-// wget https://github.com/thewh1teagle/vibe/raw/refs/heads/main/samples/short.wav
-// zig build
-// zig-out/bin/whisper.zig
-
 const std = @import("std");
 
 const whisper = @cImport({
@@ -42,7 +37,7 @@ pub fn main() !void {
     }
 
     // whisper
-    // whisper.whisper_log_set(whisper_log_callback, null);
+    whisper.whisper_log_set(whisper_log_callback, null);
 
     const cparams: whisper.whisper_context_params = whisper.whisper_context_default_params();
 
